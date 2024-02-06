@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import MainScene from './scenes/MainScene.js';
+import MainScene from './scenes/MainScene.js'; 
+import Player from './scenes/characters/Player.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -8,7 +9,7 @@ const config = {
     physics: {
         default: 'matter',
         matter: {
-            debug: true,
+            debug: false,
             gravity: {
                 y: 1 
             }
