@@ -3,15 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cat vs. God</title> 
+    <title>Cat vs. God</title>
     <link rel="icon" type="img/png" href="src/assets/favicon/fav.png">
+    <!-- Google Fonts link for Foldit font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Foldit:wght@500&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; }
-        #game-container { width: 100vw; height: 100vh; }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        body { 
+            margin: 0; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000000; /* Dark background for theater feel */
+            color: #FFF; /* Ensuring default text color is white for all texts */
+            font-family: 'Foldit', sans-serif; /* Using Foldit as the primary font */
+        }
+        #game-container {
+            box-shadow: 0 0 15px #FFF; /* Add a subtle glow around the game container */
+            margin-bottom: 20px; /* Spacing for title/logo below */
+            border: 3px solid #FFF; /* Defines the border around the game canvas */
+        }
+        .title {
+            color: inherit; /* Inherits white color for text */
+            margin: 20px 0; /* Space above and below title */
+            font-size: 2em; /* Adjust size as needed */
+            font-weight: 500; /* Weight as per Foldit font */
+        }
+        .logo {
+            width: 150px; /* Adjust based on actual logo size */
+            height: 150px; /* Make the logo circular */
+            border-radius: 50%; /* Circular border */
+            overflow: hidden; /* Ensures no overflow outside the circular shape */
+            animation: spin 20s linear infinite; /* Applies the spin animation */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #202020; /* Match the page background to hide square edges */
+        }
+        .logo img {
+            width: 100%; /* Ensures the image covers the circular area */
+            height: auto; /* Maintains aspect ratio */
+        }
     </style>
 </head>
 <body>
+    <div class="title">Cat vs. God</div>
     <div id="game-container"></div>
+    <div class="logo">
+        <img src="./src/assets/reflect.png" alt="Company Logo">
+    </div>
     <script type="module" src="./src/main.js"></script> <!-- Path to your main.js file -->
 </body>
 </html>
