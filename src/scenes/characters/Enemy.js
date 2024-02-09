@@ -68,9 +68,14 @@ export default class Skelly extends Phaser.Physics.Matter.Sprite {
                 this.anims.play('enemy_attack', true);
                 // Check for the specific attack frames and overlap with player
                 if ([21, 22, 23].includes(this.anims.currentFrame.index)) {
-                    // Handle player death and respawn here
-                    player.die(); // Implement this method in the player class
+                    const isCollidingWithPlayer = Phaser.Physics.Matter.Matter.SAT.collides(this.body, player.body).collided;
+                    if (isCollidingWithPlayer) { 
+                        console.log('Enemy should hit the player now!');
+                        
+                        player.die();
+                    }
                 }
+                    
             }
         } else {
             // If the player is too far away, idle

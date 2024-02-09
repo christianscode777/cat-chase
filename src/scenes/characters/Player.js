@@ -91,35 +91,31 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
     } 
 
     die() {
-        // Handle player death, such as reducing lives and respawning
+        console.log('Player die method called.');
+        // Play the 'dead' animation
         this.anims.play('dead');
-
+        
         // Disable player input and physics while the death animation plays
-        this.disableBody(true, true);
-
+        this.setStatic(true); // For Matter.js, setStatic makes the body immovable and not react to collisions
+    
         // After the death animation is done, we'll respawn the player
         this.scene.time.delayedCall(this.anims.currentAnim.msPerFrame * this.anims.currentAnim.frames.length, () => {
             // Reduce lives count
-            if (this.lives > 0) {
-                this.lives -= 1;
+            this.lives -= 1;
             
-                // Respawn the player at the original position after the animation
-                this.scene.add.existing(new Player(this.scene, 480, 100, 'cat-run'));
-
-                // Optionally play a 'respawn' animation or effect
-                // You would need to make sure this is a method in the Player class
-                this.scene.anims.play('respawn');
+            if (this.lives > 0) {
+                // Reset the player position and make it dynamic again
+                this.setPosition(480, 100); // Original spawn point
+                this.setStatic(false);
+                this.anims.play('respawn');
             } else {
                 // Handle game over logic
                 console.log('Game Over!');
+                this.scene.scene.restart(); // This restarts the current scene, resetting the game.
             }
-    });
+        });
+    }
 
-    // Remove the current player instance after the 'dead' animation has had time to play
-    this.scene.time.delayedCall(this.anims.currentAnim.msPerFrame * this.anims.currentAnim.frames.length, () => {
-        this.destroy();
-    });
-}
 
     update() {
         // Check if spacebar is pressed
@@ -149,12 +145,13 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
                 }
             }
         }
-        
-        
-    
-        // Jump logic remains the same
+      
         if (Phaser.Input.Keyboard.JustDown(this.keys.up) || Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)) {
             this.jump();
+        }
+        
+        if (this.anims.currentAnim && this.anims.currentAnim.key === 'dead') {
+            return;
         }
     }
     

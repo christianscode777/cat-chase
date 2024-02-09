@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import MainScene from './scenes/MainScene.js'; 
-import Player from './scenes/characters/Player.js';
+ 
 import MainScene from '@/scenes/MainScene.js';
 
 const gameWidth = 800; // Wider aspect ratio

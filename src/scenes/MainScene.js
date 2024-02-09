@@ -79,6 +79,9 @@ export default class MainScene extends Phaser.Scene {
 
     update(time, delta) {
         this.player.update(); 
-        this.enemy.update(this.player);
+        this.enemy.update(this.player); 
+
+        console.log(`Player Position: x=${this.player.x}, y=${this.player.y}`);
+        console.log(`Enemy Position: x=${this.enemy.x}, y=${this.enemy.y}`);
     }
 }
