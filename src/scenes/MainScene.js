@@ -35,10 +35,15 @@ export default class MainScene extends Phaser.Scene {
             frameWidth: 43,
             frameHeight: 37
         }); 
-        this.load.spritesheet('skellcount', 'src/assets/sprites/skull-atk.png', {   
-            frameWidth: 43,
-            frameHeight: 37
-        });
+        this.load.spritesheet('skellcount', 'src/assets/sprites/mySkellyCounter.png', {   
+            frameWidth: 500,
+            frameHeight: 500
+        }); 
+        this.load.spritesheet('skull-lol', 'src/assets/sprites/skull-react.png', {   
+            frameWidth: 32,
+            frameHeight: 32
+        }); 
+
 
     }
 
