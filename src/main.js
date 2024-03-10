@@ -1,10 +1,8 @@
 import Phaser from 'phaser';
-import MatterCollisionPlugin from 'phaser-matter-collision-plugin'; 
-
-import MainScene from '@/scenes/MainScene.js'; 
+import MainScene from '@/scenes/MainScene.js'; // Adjust the import path as necessary
 
 const gameWidth = 800;
-const gameHeight = 450; 
+const gameHeight = 450;
 
 const config = {
     width: gameWidth,
@@ -12,33 +10,22 @@ const config = {
     backgroundColor: '#000000',
     type: Phaser.AUTO,
     scale: {
-        mode: Phaser.Scale.FIT, 
+        mode: Phaser.Scale.FIT,
         parent: 'game-container',
-        autoCenter: Phaser.Scale.CENTER_BOTH, 
+        autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     physics: {
-        default: 'matter',
-        matter: {
+        default: 'arcade',
+        arcade: {
             debug: true, // Turn off debug mode for production
-            gravity: {
-                y: 2
-            }
+            gravity: { y: 300 } // Adjust gravity as needed for your game
         }
     },
-    scene: [MainScene], 
-    plugins: {
-        scene: [
-            {
-                plugin: MatterCollisionPlugin, 
-                key: 'matterCollision', 
-                mapping: 'matterCollision' 
-            }
-        ]
-    }
+    scene: [MainScene]
 };
 
-const game = new Phaser.Game(config); 
+const game = new Phaser.Game(config);
 
 window.addEventListener('resize', function () {
     game.scale.resize(window.innerWidth, window.innerHeight);
-}); 
+});

@@ -1,24 +1,18 @@
 import * as Phaser from 'phaser';
 
-export default class Player extends Phaser.Physics.Matter.Sprite {
+export default class Player extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, spriteSheetKey = 'cat-player') {
-        super(scene.matter.world, x, y, spriteSheetKey);
+        super(scene, x, y, spriteSheetKey);
 
-        const { Bodies } = Phaser.Physics.Matter.Matter;
-        const { width, height } = this.getBounds();
-
-        this.mainBody = Bodies.rectangle(x, y, width, height, { label: 'player' });
-        this.setFrictionAir(0.2);
-        this.setExistingBody(this.body);
-        this.setFixedRotation();    
-
+        // Arcade Physics body creation and configuration
+        scene.physics.world.enable(this);
+        this.body.setCollideWorldBounds(true); // Prevent player from going out of bounds
+        this.body.setSize(this.frame.width, this.frame.height);
+        this.body.setGravityY(300); // Set gravity specifically for the player 
 
         this.isAttacking = false;
-        
         this.lives = 1;
         this.initPlayer();
-
-        
 
         this.keys = scene.input.keyboard.addKeys({
             left: Phaser.Input.Keyboard.KeyCodes.A,
@@ -30,27 +24,44 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
             attack: Phaser.Input.Keyboard.KeyCodes.Z,
             space: Phaser.Input.Keyboard.KeyCodes.SPACE
         });
-    } 
+    }
 
-        // In Player class
     initPlayer() {
         this.lives = 1;
         this.isAttacking = false;
         this.clearTint();
-
-        // Improved check to prevent duplicate players
+    
+        // Check if there is already a player instance and if it's not the current one
         if (this.scene.player && this.scene.player !== this) {
-            this.scene.player.destroy();
+            console.log("Destroying previous player instance.");
+            this.scene.player.destroy(); // Destroy the previous player instance
+            this.scene.player.body = null; // Ensure to nullify the body reference to prevent shared body issue
+        } else if (!this.scene.player) {
+            console.log("No previous player instance found.");
         }
-        this.scene.player = this;
+        
+        this.scene.player = this; // Set the current player as the scene's player
+    
+        // Re-enable physics body in case it was destroyed earlier
+        this.scene.physics.world.enable(this);
+        this.body.setCollideWorldBounds(true);
+        this.body.setSize(this.frame.width, this.frame.height);
+        this.body.setGravityY(300); 
 
-        // Set up animations
-        this.setupAnimations();
+        
+    
+        // Set up animations and other initial properties
+        this.setupAnimations(); 
+
+        console.log("Player Physics Body: ", this.body); 
+
+        console.log('Player initialized with physics body:', this.body); 
+
+        
+
     }
 
-
     setupAnimations() { 
-        
         this.scene.anims.create({
             key: 'idle',
             frames: this.scene.anims.generateFrameNumbers('cat-player', { start: 0, end: 16 }),
@@ -58,7 +69,6 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
             repeat: -1
         });
 
-        // Jump animation
         this.scene.anims.create({
             key: 'jump',
             frames: this.scene.anims.generateFrameNumbers('cat-player', { start: 107, end: 110 }),
@@ -113,101 +123,81 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
         }, this);
     }
 
-    receiveDamage() {
-        this.lives -= 1;
-        if (this.lives <= 0) {
-            console.log('Player die method called.');
-            this.anims.play('dead');
-            this.setStatic(true);
-
-            // Add a callback after the 'dead' animation to destroy and respawn
-            this.scene.time.delayedCall(this.anims.currentAnim.msPerFrame * this.anims.currentAnim.frames.length, () => {
-                this.destroy(); // Destroy the player instance
-
-                // Respawn logic
-                this.scene.respawnPlayer();
-            });
-        }
-    }  
-
     
-
     attack() {
-        if (!this.isAttacking) { // Prevent re-triggering attack if already attacking
+        if (!this.isAttacking) {
             this.isAttacking = true;
-            this.anims.stop();
-            this.anims.play('attack', true).once('animationcomplete', () => {
-                this.isAttacking = false; // Reset attack state after animation completes
-            });
-    
-            // Create temporary attack hitbox (adjust offset and size as needed)
-            const attackHitbox = this.scene.matter.add.rectangle(this.x + (this.flipX ? -30 : 30), this.y, 20, 10, { 
-                isSensor: true, 
-                label: 'playerAttack', // Label the hitbox for collision detection
-                isStatic: true 
-            });
-    
-            // Overlap Check - Adjusted to use the Matter.js collision system properly
-            this.scene.matterCollision.addOnCollideStart({
-                objectA: attackHitbox,
-                objectB: this.scene.skelly.mainBody,
-                callback: eventData => {
-                  const { bodyA, bodyB } = eventData;
-              
-                  // Ensure bodyA is indeed the attack hitbox
-                  if (bodyA.label === 'playerAttack' && bodyB.gameObject) {  
-                    bodyB.gameObject.receiveDamage(this); // Damage the skelly
-                  } 
+            this.body.setVelocityX(0); // Stop player's movement
+            this.play('attack', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                // Check if the enemy is within attack range
+                let distanceToSkelly = Phaser.Math.Distance.Between(
+                    this.x, this.y, 
+                    this.scene.skelly.x, this.scene.skelly.y
+                );
+                if (distanceToSkelly < this.attackRange) {
+                    this.scene.skelly.receiveDamage(1); // Deal damage to the enemy
                 }
+                this.isAttacking = false;
             });
-              
-    
-            // Destroy the hitbox after a short delay to simulate attack duration
-            this.scene.time.delayedCall(200, () => { 
-                this.scene.matter.world.remove(attackHitbox); // Correctly remove hitbox from Matter world
-            }, [], this); 
         }
     }
     
+    
+    
 
+    
     jump() {
-        this.setVelocityY(-10);
-        this.anims.play('jump');
-    } 
+        // Safety check before accessing this.body
+        if (this.body && (this.body.touching.down || this.body.blocked.down)) {
+            this.body.setVelocityY(-500); // Adjust velocity for jump height
+            this.anims.play('jump');
+        }
+    }
+    
+    
+    update() { 
 
-    update() {
-        // Check if spacebar is pressed
-        if (Phaser.Input.Keyboard.JustDown(this.keys.space))   { 
+        if (!this.body) console.error('Player physics body is undefined.');
+
+        // Check for attack input
+        if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
             this.attack();
         }
     
-        // Then check for movement
-        if (this.keys.left.isDown || this.keys.arrowLeft.isDown) {
-            this.setVelocityX(-2.5);
-            this.flipX = true;
-            if (!this.isAttacking) { // Only play run animation if not attacking
-                this.anims.play('run', true);
+        // Combined conditional check for this.body for both movement and jump input
+        if (this.body) {
+            let velocityX = 0;
+    
+            // Handle left/right movement
+            if (this.keys.left.isDown || this.keys.arrowLeft.isDown) {
+                velocityX = -160; // Adjust speed as needed
+                this.flipX = true;
+            } else if (this.keys.right.isDown || this.keys.arrowRight.isDown) {
+                velocityX = 160; // Adjust speed as needed
+                this.flipX = false;
             }
-        } else if (this.keys.right.isDown || this.keys.arrowRight.isDown) {
-            this.setVelocityX(2.5);
-            this.flipX = false;
-            if (!this.isAttacking) { // Only play run animation if not attacking
-                this.anims.play('run', true);
+    
+            // Set velocity based on input
+            this.body.setVelocityX(velocityX);
+    
+            // Play animations based on movement
+            if (!this.isAttacking) {
+                if (velocityX !== 0) {
+                    this.anims.play('run', true);
+                } else {
+                    this.anims.play('idle', true);
+                }
             }
-        } else {
-            this.setVelocityX(0);
-            if (!this.isAttacking) { // Only play idle animation if not attacking
-                this.anims.play('idle', true);
-            }
+    
+            // Check for jump input
+            if (Phaser.Input.Keyboard.JustDown(this.keys.up) || Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)) {
+                this.jump();
+            } 
+
         }
-      
-        if (Phaser.Input.Keyboard.JustDown(this.keys.up) || Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)) {
-            this.jump();
-        }
-        
-        if (this.anims.currentAnim && this.anims.currentAnim.key === 'dead') {
-            return;
+
+        if (!this.body) {
+            console.error("Player's physics body is undefined during update cycle.");
         }
     }
-} 
-
+}    
