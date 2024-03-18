@@ -1,14 +1,16 @@
 import Phaser from 'phaser';
 import MainScene from '@/scenes/MainScene.js'; // Adjust the import path as necessary
+import GameOverScene from '@/scenes/GameOverScene.js'; // Ensure you have this file in your scenes directory
+import MainMenuScene from '@/scenes/MainMenuScene.js'; // Ensure you have this file in your scenes directory
 
 const gameWidth = 800;
 const gameHeight = 450;
 
 const config = {
+    type: Phaser.AUTO,
     width: gameWidth,
     height: gameHeight,
     backgroundColor: '#000000',
-    type: Phaser.AUTO,
     scale: {
         mode: Phaser.Scale.FIT,
         parent: 'game-container',
@@ -17,11 +19,11 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true, // Turn off debug mode for production
+            debug: false, // Adjust according to your needs (true for development, false for production)
             gravity: { y: 300 } // Adjust gravity as needed for your game
         }
     },
-    scene: [MainScene]
+    scene: [MainMenuScene, MainScene, GameOverScene] // Include all your scenes here
 };
 
 const game = new Phaser.Game(config);

@@ -3,17 +3,17 @@ import * as Phaser from 'phaser';
 export default class Player extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, spriteSheetKey = 'cat-player') {
         super(scene, x, y, spriteSheetKey);
-
+    
         // Arcade Physics body creation and configuration
         scene.physics.world.enable(this);
         this.body.setCollideWorldBounds(true); // Prevent player from going out of bounds
         this.body.setSize(this.frame.width, this.frame.height);
         this.body.setGravityY(300); // Set gravity specifically for the player 
-
+    
         this.isAttacking = false;
-        this.lives = 1;
+        this.lives = 3;
         this.initPlayer();
-
+    
         this.keys = scene.input.keyboard.addKeys({
             left: Phaser.Input.Keyboard.KeyCodes.A,
             right: Phaser.Input.Keyboard.KeyCodes.D,
@@ -25,9 +25,10 @@ export default class Player extends Phaser.GameObjects.Sprite {
             space: Phaser.Input.Keyboard.KeyCodes.SPACE
         });
     }
+    
 
     initPlayer() {
-        this.lives = 1;
+        this.lives = 3;
         this.isAttacking = false;
         this.clearTint();
     
@@ -46,7 +47,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
         this.scene.physics.world.enable(this);
         this.body.setCollideWorldBounds(true);
         this.body.setSize(this.frame.width, this.frame.height);
-        this.body.setGravityY(300); 
+        this.body.setGravityY(500); 
 
         
     
@@ -56,8 +57,6 @@ export default class Player extends Phaser.GameObjects.Sprite {
         console.log("Player Physics Body: ", this.body); 
 
         console.log('Player initialized with physics body:', this.body); 
-
-        
 
     }
 
@@ -110,7 +109,15 @@ export default class Player extends Phaser.GameObjects.Sprite {
             frames: this.scene.anims.generateFrameNumbers('cat-player', { start: 200, end: 203 }),
             frameRate: 10,
             repeat: 0
+        }); 
+
+        this.scene.anims.create({
+            key: 'damage',
+            frames: this.scene.anims.generateFrameNumbers('cat-player', { start: 148, end: 149 }), // Replace X and Y with appropriate frame numbers
+            frameRate: 10,
+            repeat: 0 // Play once
         });
+        
 
         this.anims.play('run', true);
 
@@ -125,21 +132,37 @@ export default class Player extends Phaser.GameObjects.Sprite {
 
     
     attack() {
-        if (!this.isAttacking) {
+        if (!this.isAttacking && this.body) {
             this.isAttacking = true;
-            this.body.setVelocityX(0); // Stop player's movement
             this.play('attack', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                // Check if the enemy is within attack range
-                let distanceToSkelly = Phaser.Math.Distance.Between(
-                    this.x, this.y, 
-                    this.scene.skelly.x, this.scene.skelly.y
-                );
-                if (distanceToSkelly < this.attackRange) {
-                    this.scene.skelly.receiveDamage(1); // Deal damage to the enemy
+            
+                if (this.scene.physics.overlap(this, this.scene.skelly)) {
+                    // Apply damage to Skelly
+                    this.scene.skelly.receiveDamage(3); // Assuming 3 is the damage value
                 }
                 this.isAttacking = false;
             });
         }
+    }
+    
+    
+    
+    
+    receiveDamage(damage) {
+        this.lives -= damage; 
+        if (this.lives > 0) {
+            this.play('damage', true); // Play the damage animatio
+            console.log(`Player lives left: ${this.lives}`);
+
+        } else {
+            this.play('dead', true).on('animationcomplete', () => {
+                console.log('Player instance is dead.');
+                this.destroy(); // Remove the player instance from the game
+            });
+        } 
+
+        this.scene.updateSkellyCounter(this.lives);
+
     }
     
     
@@ -149,7 +172,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
     jump() {
         // Safety check before accessing this.body
         if (this.body && (this.body.touching.down || this.body.blocked.down)) {
-            this.body.setVelocityY(-500); // Adjust velocity for jump height
+            this.body.setVelocityY(-300); // Adjust velocity for jump height
             this.anims.play('jump');
         }
     }
@@ -201,3 +224,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
         }
     }
 }    
+
+
+
+
