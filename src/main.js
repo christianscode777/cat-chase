@@ -1,10 +1,13 @@
 import Phaser from 'phaser';
-import MainScene from '@/scenes/MainScene.js'; // Adjust the import path as necessary
-import GameOverScene from '@/scenes/GameOverScene.js'; // Ensure you have this file in your scenes directory
-import MainMenuScene from '@/scenes/MainMenuScene.js'; // Ensure you have this file in your scenes directory
+import MainScene from './scenes/MainScene.js';
+import GameOverScene from './scenes/GameOverScene.js';
+import MainMenuScene from './scenes/MainMenuScene.js';
+import OpeningScene from './scenes/OpeningScene.js';
 
-const gameWidth = 800;
-const gameHeight = 450;
+// Retrieve game dimensions from the HTML element
+const gameContainer = document.getElementById('game-container');
+const gameWidth = gameContainer.getAttribute('data-width');
+const gameHeight = gameContainer.getAttribute('data-height');
 
 const config = {
     type: Phaser.AUTO,
@@ -19,15 +22,11 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: false, // Adjust according to your needs (true for development, false for production)
-            gravity: { y: 300 } // Adjust gravity as needed for your game
+            debug: false,
+            gravity: { y: 300 }
         }
     },
-    scene: [MainMenuScene, MainScene, GameOverScene] // Include all your scenes here
+    scene: [OpeningScene, MainMenuScene, MainScene, GameOverScene]
 };
 
 const game = new Phaser.Game(config);
-
-window.addEventListener('resize', function () {
-    game.scale.resize(window.innerWidth, window.innerHeight);
-});

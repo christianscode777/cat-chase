@@ -8,7 +8,9 @@ export default class MainScene extends Phaser.Scene {
         this.tileLayer1 = null; // Define tileLayer1 in the constructor to make it available in other methods.
     }
 
-    preload() {
+    preload() { 
+
+        this.load.audio('gameMusic', 'src/assets/gameMusic.wav');
         this.load.tilemapTiledJSON('map', 'src/assets/maps/catmap1.json');
         this.load.image('MyTileset', 'src/assets/tilesets/MyTileset-1.png');
         this.load.image('farback', 'src/assets/tilesets/layers/country-platform-back.png');
@@ -41,7 +43,11 @@ export default class MainScene extends Phaser.Scene {
         });
     }
 
-    create() {
+    create() { 
+
+        this.backgroundMusic = this.sound.add('gameMusic', { loop: true });
+        this.backgroundMusic.play();
+
         const map = this.make.tilemap({ key: 'map' });
         const tileset = map.addTilesetImage('MyTileset');
         const background = this.add.image(0, 0, 'farback').setOrigin(0, 0).setScrollFactor(1.00, 1.00);

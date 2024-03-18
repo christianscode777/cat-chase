@@ -7,8 +7,10 @@ export default class Player extends Phaser.GameObjects.Sprite {
         // Arcade Physics body creation and configuration
         scene.physics.world.enable(this);
         this.body.setCollideWorldBounds(true); // Prevent player from going out of bounds
-        this.body.setSize(this.frame.width, this.frame.height);
-        this.body.setGravityY(300); // Set gravity specifically for the player 
+       
+        this.body.setSize(this.frame.width * 0.9, this.frame.height * 0.9); // Adjust size to allow slight overlap
+
+        this.body.setGravityY(300); // Set gravity specifically for the player  
     
         this.isAttacking = false;
         this.lives = 3;
