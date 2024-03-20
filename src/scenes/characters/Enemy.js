@@ -1,32 +1,34 @@
-import Phaser from 'phaser';
+import Phaser from 'phaser'; 
+// Correct import statement if Coin.js is in the same directory as Enemy.js
+import Coin from './Coin.js';
+
+
+
+
 
 export default class Skelly extends Phaser.GameObjects.Sprite {
-    static defeatedCount = 0; // Static property to keep track of defeated Skelly instances
+    static defeatedCount = 0; // Keep track of defeated Skelly instances
 
     constructor(scene, x, y, spriteSheetKey = 'enemy-skull') {
         super(scene, x, y, spriteSheetKey);
         this.scene = scene;
-        this.lives = 5; // Example starting lives
+        this.lives = 5;
         this.isAttacking = false;
-        this.isAwareOfPlayer = false; // Track player awareness
+        this.isAwareOfPlayer = false;
 
-        // Arcade Physics body creation and configuration
         scene.physics.world.enable(this);
         this.body.setCollideWorldBounds(true);
-        this.body.setSize(this.width * 0.8, this.height * 0.9);
         this.body.setOffset(0, 0);
         this.body.immovable = true;
 
-        // Additional reference for documentation - not a real rename
-        this.body1 = this.body;
-        this.visionRange = 100; // Example range in pixels
+        this.visionRange = 100;
         this.defineAnimations();
         this.play('enemy_idle');
-
-        console.log('Skelly created at x:', x, 'y:', y);
+        this.state = 'idle'; // Initial state
+        this.previousState = null;
     }
 
-   defineAnimations() {
+    defineAnimations() {
         this.scene.anims.create({
             key: 'enemy_idle',
             frames: this.scene.anims.generateFrameNumbers('enemy-skull', { start: 12, end: 24 }),
@@ -70,51 +72,92 @@ export default class Skelly extends Phaser.GameObjects.Sprite {
         });
     }
 
-    receiveDamage(damageAmount) {
-        if (!this.active) {
-            console.warn('Skelly instance is not active.');
-            return;
-        }
-    
-        // Subtract the specified damage amount from Skelly's lives
-        this.lives -= damageAmount;
-    
-        if (this.lives > 0) {
-            // Play the damage animation if Skelly is still alive
-            this.play('enemy_damage', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                // Optional: Add any logic that should occur after the damage animation completes
-            });
-        } else {
-            // Play the death animation if Skelly has no lives left
-            this.play('enemy_dead', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                Skelly.defeatedCount++; // Increment the count of defeated Skellies
-                this.setActive(false).setVisible(false); // Optionally deactivate and hide Skelly instead of destroying
-                // Consider adding a respawn mechanism here if applicable
-            });
-        }
-    }
+
     
 
     respawn(x, y) {
-        // Reset properties for respawn
-        this.setActive(true);
-        this.setVisible(true);
-        this.lives = 10; // Reset lives or any other properties as needed
-        this.setPosition(x, y);
+        this.setActive(true).setVisible(true);
+        this.lives = 5; // Reset lives
+        this.setDepth(25);
+        this.setPosition(x, y); 
         this.play('enemy_idle');
     }
 
-    // Assume methods for defining behavior (e.g., AI logic, movement, attacking) follow here
-
     update() {
-        // Basic AI for patrolling within a defined range
-        if (!this.isAwareOfPlayer) {
-            this.patrol();
+        switch (this.state) {
+            case 'idle':
+                if (!this.isAwareOfPlayer) {
+                    this.patrol();
+                } else {
+                    this.detectPlayer();
+                }
+                break;
+            case 'attacking':
+                this.attackPlayer();
+                break;
+            case 'takingDamage':
+                // Special handling for taking damage if needed
+                break;
+            case 'dead':
+                // Perhaps a separate method to handle post-death logic
+                break;
         }
-
-        // Detect player proximity and react accordingly
-        this.detectPlayer();
     }
+
+    setState(newState) {
+        if (this.state !== newState) {
+            this.previousState = this.state;
+            this.state = newState;
+            this.onStateChange();
+        }
+    } 
+
+    onStateChange() {
+        switch (this.state) {
+            case 'idle':
+                this.play('enemy_idle', true);
+                break;
+            case 'attacking':
+                // Attacking logic should be here.
+                break;
+            case 'takingDamage':
+                this.play('enemy_damage', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                    // Return to previous state or decide next state based on context.
+                    this.setState(this.previousState);
+                });
+                break;
+            case 'dead':
+                this.play('enemy_dead', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                    // Drop a coin at Skelly's position.
+                    let coin = new Coin(this.scene, this.x, this.y + 16);
+                    this.scene.coins.add(coin);
+                    
+                    // Set inactive and invisible before destroying to prevent further updates.
+                    this.setActive(false).setVisible(false);
+                    
+                    this.destroy();
+                    Skelly.defeatedCount++;
+                });
+                break;
+        }
+    }
+    
+    
+
+    receiveDamage(damageAmount) {
+        if (!this.active || this.state === 'dead') return;
+        
+        this.lives -= damageAmount;
+    
+        if (this.lives <= 0) {
+            this.setState('dead');
+            // You no longer need to call play('enemy_dead') here as it's being handled in onStateChange() when the state is set to 'dead'.
+        } else {
+            this.setState('takingDamage');
+            // 'takingDamage' state will play the 'enemy_damage' animation via onStateChange() method.
+        }
+    }
+    
 
     patrol() {
         // Example patrol behavior: move back and forth within a range
@@ -165,7 +208,7 @@ export default class Skelly extends Phaser.GameObjects.Sprite {
             this.isAttacking = true;
             this.attackCooldown = true; // Put Skelly on cooldown
             this.play('enemy_attack', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                this.scene.player.receiveDamage(.1); // Apply damage to the player
+                this.scene.player.receiveDamage(1); // Apply damage to the player
                 this.isAttacking = false;
                 this.play('enemy_idle'); // Return to idle state
             });

@@ -3,14 +3,10 @@ import * as Phaser from 'phaser';
 export default class Player extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, spriteSheetKey = 'cat-player') {
         super(scene, x, y, spriteSheetKey);
-    
-        // Arcade Physics body creation and configuration
         scene.physics.world.enable(this);
-        this.body.setCollideWorldBounds(true); // Prevent player from going out of bounds
-       
-        this.body.setSize(this.frame.width * 0.9, this.frame.height * 0.9); // Adjust size to allow slight overlap
-
-        this.body.setGravityY(300); // Set gravity specifically for the player  
+        this.body.setCollideWorldBounds(true);
+        this.body.setSize(this.frame.width * 1, this.frame.height * 1); 
+        this.body.setGravityY(300);
     
         this.isAttacking = false;
         this.lives = 3;
@@ -27,39 +23,25 @@ export default class Player extends Phaser.GameObjects.Sprite {
             space: Phaser.Input.Keyboard.KeyCodes.SPACE
         });
     }
-    
 
     initPlayer() {
         this.lives = 3;
-        this.isAttacking = false;
+        this.isAttacking = false; 
+        this.setDepth(25); // Reapply depth in case it's called outside of creation
         this.clearTint();
-    
-        // Check if there is already a player instance and if it's not the current one
-        if (this.scene.player && this.scene.player !== this) {
-            console.log("Destroying previous player instance.");
-            this.scene.player.destroy(); // Destroy the previous player instance
-            this.scene.player.body = null; // Ensure to nullify the body reference to prevent shared body issue
-        } else if (!this.scene.player) {
-            console.log("No previous player instance found.");
-        }
-        
-        this.scene.player = this; // Set the current player as the scene's player
-    
-        // Re-enable physics body in case it was destroyed earlier
+        this.scene.player = this;
         this.scene.physics.world.enable(this);
-        this.body.setCollideWorldBounds(true);
+        this.body.setCollideWorldBounds(true); 
         this.body.setSize(this.frame.width, this.frame.height);
-        this.body.setGravityY(500); 
+        this.body.setGravityY(500);
+        this.setupAnimations();
 
-        
-    
-        // Set up animations and other initial properties
-        this.setupAnimations(); 
-
-        console.log("Player Physics Body: ", this.body); 
-
-        console.log('Player initialized with physics body:', this.body); 
-
+        // Initialize the attack hitbox
+        this.attackHitbox = this.scene.add.zone(this.x, this.y, 20, 10); // Define the size as needed
+        this.scene.physics.world.enable(this.attackHitbox);
+        this.attackHitbox.body.moves = false; 
+        this.attackHitbox.setData('player', this);
+        this.attackHitbox.setVisible(false); // Hitbox is invisible
     }
 
     setupAnimations() { 
@@ -132,101 +114,64 @@ export default class Player extends Phaser.GameObjects.Sprite {
         }, this);
     }
 
-    
     attack() {
         if (!this.isAttacking && this.body) {
             this.isAttacking = true;
             this.play('attack', true).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-            
-                if (this.scene.physics.overlap(this, this.scene.skelly)) {
-                    // Apply damage to Skelly
-                    this.scene.skelly.receiveDamage(3); // Assuming 3 is the damage value
-                }
                 this.isAttacking = false;
-            });
+                console.log('Attack animation completed'); // Confirming attack animation completion
+            }); 
+
+            console.log('Player object during attack:', this); // Log to see the properties of 'this' during attack
+        
+            // Position the attackHitbox relative to the player
+            this.attackHitbox.setPosition(
+                this.flipX ? this.x - 20 : this.x + 20,
+                this.y
+            );
+            console.log('Attack hitbox positioned', this.attackHitbox.x, this.attackHitbox.y); // Logging hitbox position
         }
     }
     
-    
-    
-    
-    receiveDamage(damage) {
-        this.lives -= damage; 
-        if (this.lives > 0) {
-            this.play('damage', true); // Play the damage animatio
-            console.log(`Player lives left: ${this.lives}`);
 
+    receiveDamage(damage) {
+        this.lives -= damage;
+        if (this.lives > 0) {
+            this.play('damage', true);
         } else {
             this.play('dead', true).on('animationcomplete', () => {
-                console.log('Player instance is dead.');
-                this.destroy(); // Remove the player instance from the game
+                this.destroy();
             });
-        } 
-
-        this.scene.updateSkellyCounter(this.lives);
-
+        }
+        this.scene.updateSkellyCounter(this.lives); // Ensure you have a method to update enemy lives in your scene.
     }
-    
-    
-    
 
-    
     jump() {
-        // Safety check before accessing this.body
         if (this.body && (this.body.touching.down || this.body.blocked.down)) {
-            this.body.setVelocityY(-300); // Adjust velocity for jump height
+            this.body.setVelocityY(-300);
             this.anims.play('jump');
         }
     }
-    
-    
-    update() { 
 
-        if (!this.body) console.error('Player physics body is undefined.');
-
-        // Check for attack input
+    update() {
+        if (!this.body) throw new Error("Player's physics body is undefined.");
         if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
             this.attack();
         }
-    
-        // Combined conditional check for this.body for both movement and jump input
-        if (this.body) {
-            let velocityX = 0;
-    
-            // Handle left/right movement
-            if (this.keys.left.isDown || this.keys.arrowLeft.isDown) {
-                velocityX = -160; // Adjust speed as needed
-                this.flipX = true;
-            } else if (this.keys.right.isDown || this.keys.arrowRight.isDown) {
-                velocityX = 160; // Adjust speed as needed
-                this.flipX = false;
-            }
-    
-            // Set velocity based on input
-            this.body.setVelocityX(velocityX);
-    
-            // Play animations based on movement
-            if (!this.isAttacking) {
-                if (velocityX !== 0) {
-                    this.anims.play('run', true);
-                } else {
-                    this.anims.play('idle', true);
-                }
-            }
-    
-            // Check for jump input
-            if (Phaser.Input.Keyboard.JustDown(this.keys.up) || Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)) {
-                this.jump();
-            } 
-
+        let velocityX = 0;
+        if (this.keys.left.isDown || this.keys.arrowLeft.isDown) {
+            velocityX = -160;
+            this.flipX = true;
+        } else if (this.keys.right.isDown || this.keys.arrowRight.isDown) {
+            velocityX = 160;
+            this.flipX = false;
         }
-
-        if (!this.body) {
-            console.error("Player's physics body is undefined during update cycle.");
+        this.body.setVelocityX(velocityX);
+        if (!this.isAttacking) {
+            this.anims.play(velocityX !== 0 ? 'run' : 'idle', true);
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.keys.up) || Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)) {
+            this.jump();
         }
     }
-}    
-
-
-
-
+}
