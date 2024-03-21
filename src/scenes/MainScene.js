@@ -3,10 +3,6 @@ import Player from '@characters/Player.js';
 import Skelly from '@characters/Enemy.js';
 import Coin from '@/scenes/characters/Coin.js'; // If Coin.js is
 
-
-
-
-
 export default class MainScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MainScene' });
@@ -69,12 +65,11 @@ export default class MainScene extends Phaser.Scene {
         const tileLayer1 = map.createLayer('tileLayer1', tileset, 0, 0);
         this.tileLayer1 = tileLayer1;
         this.tileLayer1.setCollisionByProperty({ isFloor: true });
-        this.tileLayer1.setDepth(20);
+        this.tileLayer1.setDepth(25);
 
         const tileLayer3 = map.createLayer('tileLayer3', tileset, 0, 0);
         tileLayer3.setDepth(10); 
 
-        // Animation for the player's jumping state
         this.anims.create({
             key: 'skellcountT',
             frames: this.anims.generateFrameNumbers('skellcount', { 
@@ -84,44 +79,43 @@ export default class MainScene extends Phaser.Scene {
             frameRate: 10,
             repeat: -1 // '-1' for indefinite looping
         });
-    
-        // Create the skellyCounter sprite and adjust its properties
-        this.skellyCounter = this.add.sprite(this.sys.game.config.width / 2, 0, 'skellcountT');
-        this.skellyCounter.setScale(0.2); // 80% smaller than its original size
-        this.skellyCounter.setScrollFactor(0).setDepth(30); 
-        this.skellyCounter.setOrigin(0.5, 0); // Anchor to the top center
-        this.skellyCounter.play('skellcountT');
-    
 
+        // Adjusting skellyCounter properties to not interfere with gameplay
+        this.skellyCounter = this.add.sprite(this.sys.game.config.width / 2, 0, 'skellcount');
+        this.skellyCounter.setScale(0.1); // Adjust scale to be unobtrusive
+        this.skellyCounter.setScrollFactor(0); // Ensure it doesn't scroll with the camera
+        this.skellyCounter.setDepth(26); // Ensure it's above gameplay elements
+        this.skellyCounter.play('skellcountT'); 
 
-        // Create the player and skelly before adding colliders
+        this.coins = this.physics.add.group({
+            classType: Coin,
+            runChildUpdate: true // Automatically calls update on each child in the group
+        });                                                    
+
+        this.physics.add.collider(this.coins, this.tileLayer1);
+
+        // Create the player and skelly before adding colliders...
         this.player = new Player(this, 100, 100, 'cat-player');
         this.add.existing(this.player);
         this.physics.world.enable(this.player);
-        this.player.setDepth(25); 
+        this.player.setDepth(25);  
+
+        // Add or adjust this in the create method of MainScene.js
+        this.cameras.main.startFollow(this.player, true, 0.05, 0.05);
+        this.cameras.main.setZoom(3.5); // Adjust the zoom level according to your game's needs
+
 
         this.skelly = new Skelly(this, 400, 100, 'enemy-skull');
         this.add.existing(this.skelly);
         this.physics.world.enable(this.skelly);
         this.skelly.setDepth(25);
 
-        // Setup collision and overlap checks
+        // Setup collision and overlap checks...
         this.physics.add.collider(this.player, this.tileLayer1);
         this.physics.add.collider(this.skelly, this.tileLayer1);
         this.physics.add.overlap(this.player.attackHitbox, this.skelly, this.playerAttackHandler, null, this); 
         
-        this.coins = this.physics.add.group({
-            classType: Coin,
-            runChildUpdate: true // Automatically calls update on each child in the group
-        });
-
-
-        // MainScene.js inside the update method
-        this.coins.getChildren().forEach((coin) => {
-            coin.update();
-        });
-        this.physics.overlap(this.player, this.coins, this.collectCoin, null, this);
-
+        
     } 
 
     collectCoin(player, coin) {

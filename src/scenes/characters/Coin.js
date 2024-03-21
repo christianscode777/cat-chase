@@ -10,7 +10,7 @@ export default class Coin extends Phaser.GameObjects.Sprite {
         this.scene.physics.world.enable(this); 
         
         this.setDepth(25);
-        this.body.setGravityY(-300); // Negative gravity to simulate the coin popping out of the Skelly
+        this.body.setGravityY(-200); // Negative gravity to simulate the coin popping out of the Skelly
         this.body.setBounce(0.5); // A bit of a bounce effect
         this.body.setCollideWorldBounds(true);
 
